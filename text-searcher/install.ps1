@@ -1,7 +1,13 @@
 Write-Host "=== Установка утилиты fsearch ===" -ForegroundColor Cyan
 
 # Параметры репозитория dancheks/PyHelpers
-$baseUrl = "https://githubusercontent.com"
+$domain  = "raw." + "githubusercontent.com"
+$user    = "dancheks"
+$repo    = "PyHelpers"
+$branch  = "main"
+$folder  = "text-searcher"
+$baseUrl = "https://$domain/$user/$repo/$branch/$folder"
+
 $files   = @("pyproject.toml", "search_tool.py", "requirements.txt")
 
 # 1. Проверяем, установлен ли Python
