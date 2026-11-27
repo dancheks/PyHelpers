@@ -33,7 +33,6 @@ try {
         try {
             Invoke-WebRequest -Uri $fileUrl -OutFile $destPath -ErrorAction Stop
         } catch {
-            # Если requirements.txt отсутствует в папке, пропускаем без ошибки
             if ($file -ne "requirements.txt") {
                 throw "Не удалось скачать обязательный файл $file ($fileUrl)"
             }
@@ -42,27 +41,26 @@ try {
 
     Push-Location $tempDir
 
-    # 3. Устанавливаем зависимости, если requirements.txt существует и не пустой
+    # 3. Устанавливаем зависимости в профиль пользователя (--user)
     if ((Test-Path "requirements.txt") -and ((Get-Item "requirements.txt").Length -gt 0)) {
         Write-Host "[3/5] Установка библиотек из requirements.txt..." -ForegroundColor Yellow
-        python -m pip install --upgrade pip --quiet
-        python -m pip install -r requirements.txt --quiet
+        python -m pip install --user -r requirements.txt --quiet
     } else {
         Write-Host "[3/5] Дополнительные библиотеки не требуются." -ForegroundColor Green
     }
 
-    # 4. Устанавливаем пакет и регистрируем команду fsearch
+    # 4. Устанавливаем пакет в профиль пользователя (--user)
     Write-Host "[4/5] Регистрация команды fsearch..." -ForegroundColor Yellow
-    python -m pip install . --quiet
+    python -m pip install --user --upgrade . --quiet
 
 } finally {
     Pop-Location
     Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# 5. Проверяем и обновляем PATH
+# 5. Проверяем и обновляем пользовательский PATH (nt_user)
 Write-Host "[5/5] Проверка переменной PATH..." -ForegroundColor Yellow
-$scriptsDir = python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
+$scriptsDir = python -c "import sysconfig; print(sysconfig.get_path('scripts', 'nt_user'))"
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 
 if ($userPath -notlike "*$scriptsDir*") {
