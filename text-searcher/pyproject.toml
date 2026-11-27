@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text-searcher"
+version = "1.0.0"
+description = "Консольная утилита для быстрого поиска подстрок в файлах"
+requires-python = ">=3.8"
+
+[project.scripts]
+fsearch = "search_tool:main"
