@@ -19,7 +19,7 @@
 Выполните в PowerShell (скрипт сам проверит наличие Python, установит пакет в профиль пользователя и пропишет команду в `PATH`):
 
 ```powershell
-irm https://githubusercontent.com | iex
+irm https://github.com/dancheks/PyHelpers/raw/refs/heads/main/text-searcher/install.ps1 | iex
 ```
 *(После установки перезапустите окно терминала).*
 
