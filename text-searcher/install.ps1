@@ -1,39 +1,69 @@
-Write-Host "=== Установка утилиты fsearch ===" -ForegroundColor Cyan
+Write-Host "=== РЈСЃС‚Р°РЅРѕРІРєР° СѓС‚РёР»РёС‚С‹ fsearch ===" -ForegroundColor Cyan
 
-# 1. Проверяем, установлен ли Python
+# РџР°СЂР°РјРµС‚СЂС‹ СЂРµРїРѕР·РёС‚РѕСЂРёСЏ dancheks/PyHelpers
+$baseUrl = "https://githubusercontent.com"
+$files   = @("pyproject.toml", "search_tool.py", "requirements.txt")
+
+# 1. РџСЂРѕРІРµСЂСЏРµРј, СѓСЃС‚Р°РЅРѕРІР»РµРЅ Р»Рё Python
 $pythonExists = Get-Command python -ErrorAction SilentlyContinue
 
 if (-not $pythonExists) {
-    Write-Host "[1/4] Python не найден. Устанавливаю через winget..." -ForegroundColor Yellow
+    Write-Host "[1/5] Python РЅРµ РЅР°Р№РґРµРЅ. РЈСЃС‚Р°РЅР°РІР»РёРІР°СЋ С‡РµСЂРµР· winget..." -ForegroundColor Yellow
     winget install -e --id Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements
-    
-    # Обновляем переменные окружения в текущей сессии
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 } else {
-    Write-Host "[1/4] Python уже установлен." -ForegroundColor Green
+    Write-Host "[1/5] Python СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ." -ForegroundColor Green
 }
 
-# 2. Устанавливаем зависимости из requirements.txt (если файл не пустой)
-if (Test-Path "requirements.txt") {
-    Write-Host "[2/4] Проверка и установка библиотек..." -ForegroundColor Yellow
-    python -m pip install --upgrade pip --quiet
-    python -m pip install -r requirements.txt --quiet
+# 2. РЎРѕР·РґР°С‘Рј РІСЂРµРјРµРЅРЅСѓСЋ РїР°РїРєСѓ Рё СЃРєР°С‡РёРІР°РµРј С‚СѓРґР° С„Р°Р№Р»С‹ СѓС‚РёР»РёС‚С‹
+Write-Host "[2/5] РЎРєР°С‡РёРІР°РЅРёРµ С„Р°Р№Р»РѕРІ РёР· dancheks/PyHelpers..." -ForegroundColor Yellow
+$tempDir = Join-Path $env:TEMP "fsearch_install_$(Get-Random)"
+New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
+
+try {
+    foreach ($file in $files) {
+        $fileUrl = "$baseUrl/$file"
+        $destPath = Join-Path $tempDir $file
+        try {
+            Invoke-WebRequest -Uri $fileUrl -OutFile $destPath -ErrorAction Stop
+        } catch {
+            # Р•СЃР»Рё requirements.txt РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РІ РїР°РїРєРµ, РїСЂРѕРїСѓСЃРєР°РµРј Р±РµР· РѕС€РёР±РєРё
+            if ($file -ne "requirements.txt") {
+                throw "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРєР°С‡Р°С‚СЊ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ С„Р°Р№Р» $file ($fileUrl)"
+            }
+        }
+    }
+
+    Push-Location $tempDir
+
+    # 3. РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј Р·Р°РІРёСЃРёРјРѕСЃС‚Рё, РµСЃР»Рё requirements.txt СЃСѓС‰РµСЃС‚РІСѓРµС‚ Рё РЅРµ РїСѓСЃС‚РѕР№
+    if ((Test-Path "requirements.txt") -and ((Get-Item "requirements.txt").Length -gt 0)) {
+        Write-Host "[3/5] РЈСЃС‚Р°РЅРѕРІРєР° Р±РёР±Р»РёРѕС‚РµРє РёР· requirements.txt..." -ForegroundColor Yellow
+        python -m pip install --upgrade pip --quiet
+        python -m pip install -r requirements.txt --quiet
+    } else {
+        Write-Host "[3/5] Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ Р±РёР±Р»РёРѕС‚РµРєРё РЅРµ С‚СЂРµР±СѓСЋС‚СЃСЏ." -ForegroundColor Green
+    }
+
+    # 4. РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј РїР°РєРµС‚ Рё СЂРµРіРёСЃС‚СЂРёСЂСѓРµРј РєРѕРјР°РЅРґСѓ fsearch
+    Write-Host "[4/5] Р РµРіРёСЃС‚СЂР°С†РёСЏ РєРѕРјР°РЅРґС‹ fsearch..." -ForegroundColor Yellow
+    python -m pip install . --quiet
+
+} finally {
+    Pop-Location
+    Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# 3. Устанавливаем саму утилиту как системный пакет
-Write-Host "[3/4] Регистрация команды fsearch..." -ForegroundColor Yellow
-python -m pip install . --quiet
-
-# 4. Проверяем, есть ли папка Scripts от Python в пользовательском PATH
-Write-Host "[4/4] Проверка переменной PATH..." -ForegroundColor Yellow
+# 5. РџСЂРѕРІРµСЂСЏРµРј Рё РѕР±РЅРѕРІР»СЏРµРј PATH
+Write-Host "[5/5] РџСЂРѕРІРµСЂРєР° РїРµСЂРµРјРµРЅРЅРѕР№ PATH..." -ForegroundColor Yellow
 $scriptsDir = python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
-$userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 
 if ($userPath -notlike "*$scriptsDir*") {
-    [System.Environment]::SetEnvironmentVariable("Path", "$userPath;$scriptsDir", "User")
-    Write-Host "Путь $scriptsDir добавлен в PATH." -ForegroundColor Green
+    [Environment]::SetEnvironmentVariable("Path", "$userPath;$scriptsDir", "User")
+    Write-Host "РџСѓС‚СЊ $scriptsDir РґРѕР±Р°РІР»РµРЅ РІ PATH." -ForegroundColor Green
 } else {
-    Write-Host "Путь уже присутствует в PATH." -ForegroundColor Green
+    Write-Host "РџСѓС‚СЊ СѓР¶Рµ РїСЂРёСЃСѓС‚СЃС‚РІСѓРµС‚ РІ PATH." -ForegroundColor Green
 }
 
-Write-Host "`nГотово! Перезапустите терминал и используйте команду: fsearch ""A1""" -ForegroundColor Cyan
+Write-Host "`nР“РѕС‚РѕРІРѕ! РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚Рµ С‚РµСЂРјРёРЅР°Р» Рё РёСЃРїРѕР»СЊР·СѓР№С‚Рµ: fsearch ""A1""" -ForegroundColor Cyan
